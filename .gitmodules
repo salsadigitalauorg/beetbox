@@ -40,9 +40,6 @@
 [submodule "provisioning/ansible/roles/beetboxvm.wordpress"]
 	path = provisioning/ansible/roles/beetboxvm.wordpress
 	url = https://github.com/beetboxvm/ansible-role-beetbox-wordpress.git
-[submodule "provisioning/ansible/roles/angstwad.docker_ubuntu"]
-	path = provisioning/ansible/roles/angstwad.docker_ubuntu
-	url = https://github.com/angstwad/docker.ubuntu.git
 [submodule "provisioning/ansible/roles/ANXS.postgresql"]
 	path = provisioning/ansible/roles/ANXS.postgresql
 	url = https://github.com/ANXS/postgresql
@@ -169,7 +166,6 @@
 [submodule "provisioning/ansible/roles/beetboxvm.composer"]
 	path = provisioning/ansible/roles/beetboxvm.composer
 	url = https://github.com/beetboxvm/ansible-role-beetbox-composer.git
-[submodule "provisioning/ansible/roles/ansible-role-grunt"]
-	path = provisioning/ansible/roles/ansible-role-grunt
-	url = https://github.com/AsianChris/ansible-role-grunt.git
-	branch = master
+[submodule "provisioning/ansible/roles/pixelart.platformsh-cli"]
+	path = provisioning/ansible/roles/pixelart.platformsh-cli
+	url = https://github.com/pixelart/ansible-role-platformsh-cli

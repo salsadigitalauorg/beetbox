@@ -1,10 +1,4 @@
 ---
-- name: Add repository for PHP.
-  apt_repository:
-    repo: "ppa:ondrej/php"
-    mode: 644
-    update_cache: yes
-
 - name: Purge PHP version packages.
   apt:
     name: "{{ item }}"
@@ -15,15 +9,6 @@
   with_items:
     - "{{ php55_packages }} + {{ php56_packages }} + {{ php70_packages }}"
   register: php_purge
-
-- name: Purge PHP modules directory.
-  file:
-    path: "{{ item }}"
-    state: absent
-  when: php_purge.changed
-  with_items:
-    - "/usr/lib/php5/modules"
-    - "/usr/lib/php/modules"
 
 - name: Set PHP 5.5 packages.
   set_fact:

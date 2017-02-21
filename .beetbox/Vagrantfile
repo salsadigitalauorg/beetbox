@@ -2,6 +2,7 @@
 # vi: set ft=ruby :
 
 require 'fileutils'
+require 'json'
 require 'yaml'
 
 Vagrant.require_version '>= 1.8.5'
@@ -10,15 +11,17 @@ beet_root = ENV['BEET_ROOT_DIR'] || "#{__dir__}"
 config_dir = ENV['BEET_CONFIG_DIR'] || "#{beet_root}/.beetbox"
 project_config = "#{config_dir}/config.yml"
 local_config = "#{config_dir}/local.config.yml"
+composer_json = "#{beet_root}/composer.json"
 
 # Default vagrant config.
 vconfig = {
   'vagrant_box' => 'beet/box',
-  'vagrant_box_version' => '>= 0.2.7',
+  'vagrant_box_version' => '~> 0.4.0',
   'vagrant_ip' => '0.0.0.0',
   'vagrant_memory' => 1024,
   'vagrant_cpus' => 1,
   'beet_project' => 'drupal',
+  'beet_profile' => 'beetbox',
   'beet_provision_playbook' => 'provision',
   'beet_provision_tags' => 'all',
   'beet_home' => '/beetbox',
@@ -29,15 +32,23 @@ vconfig = {
   'drush_create_alias' => true
 }
 
-# Create default config file.
-if !File.exist?(project_config)
-  FileUtils.mkdir_p config_dir
-  open(project_config, "w+") << "---\nbeet_domain: #{vconfig['beet_domain']}\n"
+# Create config directory.
+FileUtils.mkdir_p config_dir
+
+# Create config.yml from composer config.
+if File.exist?(composer_json)
+  composer_conf = JSON.parse(File.read(composer_json))
+  cconfig = composer_conf['extra']['beetbox']['config'] rescue nil
+  File.open(project_config, "w") { |f| f.write(cconfig.to_yaml) } if cconfig.is_a?(Hash)
 end
+
+# Create default config file.
+default_config = "---\nbeet_domain: #{vconfig['beet_domain']}\n"
+File.open(project_config, "w") { |f| f.write(default_config) } if !File.exist?(project_config)
 
 # Create .gitignore file.
 git_ignore = "host.config.yml\nlocal.config.yml\nVagrantfile\nVagrantfile.local\n"
-open("#{config_dir}/.gitignore", "w+") << git_ignore if !File.exist?("#{config_dir}/.gitignore")
+File.open("#{config_dir}/.gitignore", "w") { |f| f.write(git_ignore) } if !File.exist?("#{config_dir}/.gitignore")
 
 # Copy config from host.
 host_config = "#{Dir.home}/.beetbox/config.yml"
@@ -141,10 +152,11 @@ Vagrant.configure("2") do |config|
       if vconfig['beet_provision']
         # Provision box
         beet_sh = "#{vconfig['beet_home']}/provisioning/beetbox.sh"
+        beet_profile = ENV['BEET_PROFILE'] || "#{vconfig['beet_profile']}"
         beet_sh_playbook = ENV['BEET_PLAY'] || "#{vconfig['beet_provision_playbook']}"
         beet_sh_tags = ENV['BEET_TAGS'] || "#{vconfig['beet_provision_tags']}"
-        local_provision = "sudo chmod +x #{beet_sh} && #{debug_mode} #{beet_sh} #{beet_sh_playbook} #{beet_sh_tags}"
-        remote_provision = "sudo apt-get -y install curl && curl -fsSL http://bit.ly/beetbuild | UBUNTU_INIT=true bash -Ee"
+        local_provision = "sudo chmod +x #{beet_sh} && #{debug_mode} BEET_PROFILE=#{beet_profile} BEET_PLAYBOOK=#{beet_sh_playbook} BEET_TAGS=#{beet_sh_tags} #{beet_sh}"
+        remote_provision = "sudo apt-get -y install curl && curl -fsSL http://bit.ly/beetbuild | bash -Ee"
         node.vm.provision "ansible", type: "shell" do |s|
           s.privileged = false
           s.inline = "if [ -f #{beet_sh} ]; then #{local_provision}; else #{remote_provision}; fi"

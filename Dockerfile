@@ -2,19 +2,19 @@ FROM ubuntu:14.04
 
 WORKDIR /beetbox
 
-ENV BEET_PROFILE 'docker'
-
-EXPOSE 80
-
 VOLUME ["/var/beetbox"]
 
-# Install sudo.
-RUN apt-get update && \
-    apt-get install -y sudo && \
-    apt-get clean
-
 # Copy source files into the build context.
-COPY . /beetbox
+COPY ./provisioning /beetbox/provisioning
 
 # Provision Beetbox.
 RUN /beetbox/provisioning/beetbox.sh
+
+# Delete innodb log files.
+RUN rm /var/lib/mysql/ib_logfile*
+
+# Allow reprovision.
+RUN rm /beetbox/installed
+
+EXPOSE 22 80 443
+CMD ["/bin/bash", "/start.sh"]

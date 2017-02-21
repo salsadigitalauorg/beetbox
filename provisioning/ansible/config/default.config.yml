@@ -39,24 +39,25 @@ symlinks: no
 known_hosts: no
 
 # Apache config.
+apache_vhost_php_fpm_parameters: |
+    <FilesMatch \.php$>
+      SetHandler "proxy:fcgi://{{ php_fpm_listen }}"
+    </FilesMatch>
+    SetEnv {{ beet_env_name }} {{ beet_env }}
 apache_daemon: apache2
 apache_remove_default_vhost: true
 apache_listen_port: "{{ (beet_webserver == 'apache') | ternary('80','82') }}"
 apache_vhosts:
   - servername: "{{ beet_domain }}"
     documentroot: "{{ beet_web }}"
-    extra_parameters: |
-      ProxyPassMatch ^/(.*\.php(/.*)?)$ "fcgi://127.0.0.1:9000{{ beet_web }}"
-      SetEnv {{ beet_env_name }} {{ beet_env }}
+    extra_parameters: "{{ apache_vhost_php_fpm_parameters }}"
 apache_listen_port_ssl: "{{ (beet_webserver == 'apache') | ternary('443','444') }}"
 apache_vhosts_ssl:
   - servername: "{{ beet_domain }}"
     documentroot: "{{ beet_web }}"
     certificate_file: "/etc/ssl/certs/ssl-cert-snakeoil.pem"
     certificate_key_file: "/etc/ssl/private/ssl-cert-snakeoil.key"
-    extra_parameters: |
-      ProxyPassMatch ^/(.*\.php(/.*)?)$ "fcgi://127.0.0.1:9000{{ beet_web }}"
-      SetEnv {{ beet_env_name }} {{ beet_env }}
+    extra_parameters: "{{ apache_vhost_php_fpm_parameters }}"
 apache_mods_enabled:
   - authn_core.load
   - expires.load
@@ -96,12 +97,12 @@ installed_extras_upload_progress: no
 installed_extras_web: no
 installed_extras_xdebug: no
 installed_extras_xhprof: no
-installed_extras_docker: no
 installed_extras_lxd: no
 installed_extras_selenium: no
 installed_extras_elasticsearch: no
 installed_extras_firewall: no
 installed_extras_postfix: no
+installed_extras_platform_cli: no
 installed_extras_pantheon_cli: no
 installed_extras_varnish: no
 installed_extras_pimpmylog: no
@@ -117,6 +118,11 @@ installed_extras_wp_cli: no
 installed_extras_phantomjs: no
 installed_extras_dcr: no
 installed_extras_grunt: no
+
+# apt repositories.
+apt_repos:
+  - ppa:ondrej/apache2
+  - ppa:ondrej/php
 
 # Extra packages.
 extra_packages:
@@ -186,6 +192,7 @@ php_fpm_pool_conf_path: "{{ php_fpm_conf_path }}/pool.d/www.conf"
 php_mysql_package: "php{{ php_version }}-mysql"
 php_memcached_package: "php-memcache"
 php_install_recommends: no
+php_module_path: "/usr/lib/php{{ php_version }}/modules"
 php55_packages:
   - php5.5
   - php5.5-curl
@@ -259,10 +266,15 @@ php_xdebug_max_nesting_level: 256
 # IDE key for debug.
 php_xdebug_idekey: PHPSTORM
 # php_xdebug_idekey: sublime.xdebug
+php_xdebug_module_path: "{{ php_module_path }}"
 
 # Xhprof config.
 xhprof_download_url: https://github.com/phacility/xhprof/archive/master.tar.gz
 xhprof_download_folder_name: xhprof-master
+php_xhprof_module_path: "{{ php_module_path }}"
+
+# uploadprogress config.
+php_uploadprogress_module_path: "{{ php_module_path }}"
 
 # Solr config.
 solr_version: "4.10.4"
@@ -287,19 +299,15 @@ welcome_template: "templates/welcome.txt.j2"
 packer_templates:
   - atlas_username: beet
     atlas_build_name: dev
-    box_version: "0.3.{{ lookup('env','CIRCLE_BUILD_NUM') | default('0',true) }}"
-    beet_version: master
     ssh_name: vagrant
     ssh_pass: vagrant
     hostname: "beetbox.local"
-    iso_url: "http://releases.ubuntu.com/trusty/ubuntu-14.04.4-server-amd64.iso"
-    iso_checksum: "07e4bb5569814eab41fafac882ba127893e3ff0bdb7ec931c9b2d040e3e94e7a"
+    iso_url: "http://releases.ubuntu.com/trusty/ubuntu-14.04.5-server-amd64.iso"
+    iso_checksum: "dde07d37647a1d2d9247e33f14e91acb10445a97578384896b4e1d985f754cc1"
   - atlas_username: beet
     atlas_build_name: box
-    box_version: "{{ lookup('env','CIRCLE_TAG') | default('0.1.1',true) }}"
-    beet_version: "{{ lookup('env','CIRCLE_TAG') | default('0.1.1',true) }}"
     ssh_name: vagrant
     ssh_pass: vagrant
     hostname: "beetbox.local"
-    iso_url: "http://releases.ubuntu.com/trusty/ubuntu-14.04.4-server-amd64.iso"
-    iso_checksum: "07e4bb5569814eab41fafac882ba127893e3ff0bdb7ec931c9b2d040e3e94e7a"
+    iso_url: "http://releases.ubuntu.com/trusty/ubuntu-14.04.5-server-amd64.iso"
+    iso_checksum: "dde07d37647a1d2d9247e33f14e91acb10445a97578384896b4e1d985f754cc1"

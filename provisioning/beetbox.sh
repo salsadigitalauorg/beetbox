@@ -1,15 +1,15 @@
 #!/bin/bash -eu
 
 # Set default environment variables.
-BEET_PLAYBOOK=${1:-provision}
-BEET_TAGS=${2:-all}
+export BEET_PROFILE=${BEET_PROFILE:-beetbox}
+BEET_PLAYBOOK=${BEET_PLAYBOOK:-provision}
+BEET_TAGS=${BEET_TAGS:-all}
 BEET_HOME=${BEET_HOME:-"/beetbox"}
 BEET_BASE=${BEET_BASE:-"/var/beetbox"}
 BEET_USER=${BEET_USER:-"vagrant"}
 BEET_REPO=${BEET_REPO:-"https://github.com/beetboxvm/beetbox.git"}
 BEET_VERSION=${BEET_VERSION:-"master"}
 BEET_DEBUG=${BEET_DEBUG:-false}
-CIRCLECI=${CIRCLECI:-false}
 ANSIBLE_HOME="$BEET_HOME/provisioning/ansible"
 ANSIBLE_DEBUG=""
 
@@ -28,12 +28,6 @@ if [ $BEET_DEBUG = "true" ]; then
   ANSIBLE_DEBUG="-vvv"
 fi
 
-# Circle CI defaults.
-if [ "$CIRCLECI" == "true" ]; then
-  [ $BEET_BASE == "/var/beetbox" ] && export BEET_BASE="/home/ubuntu/$CIRCLE_PROJECT_REPONAME"
-  [ $BEET_USER == "vagrant" ] && export BEET_USER="ubuntu"
-fi
-
 beetbox_setup() {
   # Create BEET_USER and setup sudo.
   [ -z "$(getent passwd $BEET_USER)" ] && sudo useradd -d /home/$BEET_USER -m $BEET_USER > /dev/null 2>&1
@@ -41,10 +35,11 @@ beetbox_setup() {
 
   # Install ansible.
   if [ ! -d "/etc/ansible" ]; then
-    sudo apt-get -qq -y install software-properties-common > /dev/null 2>&1
-    sudo apt-add-repository -y ppa:ansible/ansible > /dev/null 2>&1
-    sudo apt-get -qq update > /dev/null 2>&1
-    sudo apt-get -qq -y install ansible > /dev/null 2>&1
+    sudo apt-get -qq update
+    sudo apt-get -y install software-properties-common
+    sudo apt-add-repository -y ppa:ansible/ansible
+    sudo apt-get -qq update
+    sudo apt-get -y install ansible
   fi
 
   # Clone beetbox if BEET_HOME doesn't exist.
@@ -64,7 +59,7 @@ beetbox_setup() {
   beetbox_play setup
 
   # Create $BEET_HOME/.beetbox_installed
-  beetbox_adhoc file "path=$BEET_HOME/.beetbox/installed state=touch"
+  beetbox_adhoc file "path=$BEET_HOME/installed state=touch"
 }
 
 beetbox_adhoc() {
@@ -76,7 +71,7 @@ beetbox_play() {
 }
 
 # Initialise beetbox.
-[ ! -f "$BEET_HOME/.beetbox/installed" ] && beetbox_setup
+[ ! -f "$BEET_HOME/installed" ] && beetbox_setup
 
 # Create default config files.
 beetbox_play config
@@ -88,5 +83,5 @@ beetbox_play update
 beetbox_play $BEET_PLAYBOOK $BEET_TAGS
 
 # Print welcome message.
-sudo touch $BEET_HOME/.beetbox/results-$BEET_PLAYBOOK.txt
-sudo cat $BEET_HOME/.beetbox/results-$BEET_PLAYBOOK.txt
+sudo touch $BEET_HOME/results-$BEET_PLAYBOOK.txt
+sudo cat $BEET_HOME/results-$BEET_PLAYBOOK.txt

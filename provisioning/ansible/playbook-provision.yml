@@ -16,9 +16,15 @@
 
   pre_tasks:
 
+    - name: Check pre tasks directory exists.
+      stat:
+        path: "{{ beet_custom_pre_tasks }}"
+      register: pre_tasks_dir
+
     - include: "{{ item }}"
       with_fileglob:
         - "{{ beet_custom_pre_tasks }}"
+      when: pre_tasks_dir.stat.exists
       tags:
         - pre
         - custom
@@ -26,6 +32,9 @@
   roles:
     - role: beetbox-init
       when: "{{ installed_extras_init }}"
+      tags: beetbox
+    - role: beetbox-apt-repos
+      when: "{{ apt_repos | length }}"
       tags: beetbox
     - role: geerlingguy.apache
       when: "{{ installed_extras_apache }}"
@@ -67,9 +76,6 @@
       tags: extras
     - role: geerlingguy.git
       when: "{{ installed_extras_git }}"
-      tags: extras
-    - role: angstwad.docker_ubuntu
-      when: "{{ installed_extras_docker }}"
       tags: extras
     - role: thebinary.lxd
       when: "{{ installed_extras_lxd }}"
@@ -149,6 +155,9 @@
     - role: geerlingguy.varnish
       when: "{{ installed_extras_varnish }}"
       tags: extras
+    - role: pixelart.platformsh-cli
+      when: "{{ installed_extras_platform_cli }}"
+      tags: extras
     - role: hashbangcode.pantheon-cli
       when: "{{ installed_extras_pantheon_cli }}"
       tags: extras
@@ -220,9 +229,15 @@
         group: "{{ beet_user }}"
         recurse: yes
 
+    - name: Check post tasks directory exists.
+      stat:
+        path: "{{ beet_custom_post_tasks }}"
+      register: post_tasks_dir
+
     - include: "{{ item }}"
       with_fileglob:
         - "{{ beet_custom_post_tasks }}"
+      when: post_tasks_dir.stat.exists
       tags:
         - post
         - custom
@@ -230,7 +245,7 @@
     - name: Create welcome message.
       template:
         src: "{{ welcome_template }}"
-        dest: "{{ beet_home }}/.beetbox/results-provision.txt"
+        dest: "{{ beet_home }}/results-provision.txt"
         force: yes
         mode: 0644
       become: no
